@@ -4,10 +4,10 @@
 void imprimeMatriz(int ordem, int **mat);
 int** criaMatriz(int linha, int coluna);
 void jogo(int dificuldade);
-int perdeu(int x, int y);
+int perdeu(int valor,int ordem, int**campo);
 void insereBomba(int**mat, int bomba, int ordem);
 void inicializaMatriz(int** mat, int valor,int linha, int coluna);
-int verificaCoordenadas(int x, int y, int**matLido);
+int verificaCoordenadas(int x, int y, int**matLido, int ordem);
 
 int main(){
     int dificuldade;
@@ -22,8 +22,8 @@ int main(){
 
 void imprimeMatriz(int ordem, int **mat){
     printf("    ");
-    for(int x = 1; x <= 10; x++){
-        printf("%d ", x);
+    for(int x = 1; x <= ordem; x++){
+        printf(" %d ", x);
     }
     printf("\n\n");
 
@@ -33,8 +33,9 @@ void imprimeMatriz(int ordem, int **mat){
         else printf("%d  ", i+1);
 
         for(int j = 0; j < ordem; j++){
-            if(mat[i][j] == 88) printf("%c ", mat[i][j]);
-            else printf("%d ", mat[i][j]);
+            if(mat[i][j] == 88) printf(" %c ", mat[i][j]);
+            else if(mat[i][j] < 0  ) printf("%d ", mat[i][j]);
+            else printf(" %d ", mat[i][j]);
         }
         printf("\n");
     }
@@ -72,21 +73,24 @@ void jogo(int dificuldade){
     int **matCoordenadasLidas;
     switch(dificuldade){
         case 1:
-            ordem = 10;
-            bomba = 3;
+            ordem = 3;
+            bomba = 1;
             campo = criaMatriz(ordem,ordem);
+            inicializaMatriz(campo,0,ordem,ordem);
             insereBomba(campo, bomba, ordem);
         break;
         case 2:
             ordem = 20;
             bomba = 6;
             campo = criaMatriz(ordem,ordem);
+            inicializaMatriz(campo,0,ordem,ordem);
             insereBomba(campo, bomba, ordem);
         break;
         case 3:
             ordem = 30;
             bomba = 9;
             campo = criaMatriz(ordem,ordem);
+            inicializaMatriz(campo,0,ordem,ordem);
             insereBomba(campo, bomba, ordem);
         break;
         default:
@@ -94,21 +98,29 @@ void jogo(int dificuldade){
             int main();
         break;
     }
-    matCoordenadasLidas = criaMatriz(ordem,2);
-    inicializaMatriz(matCoordenadasLidas, 0 , ordem, 2);
-    inicializaMatriz(campo,0,ordem,ordem);
+    matCampo = criaMatriz(ordem, ordem);
+    matCoordenadasLidas = criaMatriz(ordem*ordem,2);
+    inicializaMatriz(matCoordenadasLidas, -1 , ordem, 2);
     inicializaMatriz(matCampo,88,ordem,ordem);
 
     imprimeMatriz(ordem, matCampo);
     int x, y, cont = 0;
-    while(scanf("%d,%d", &x, &y), (x && y) || cont <= (ordem*ordem - bomba)){
-        if(verificaCoordenadas(x,y, matCoordenadasLidas)){
-            imprimeMatriz(ordem, campo);
+    do{
+        scanf("%d,%d", &x, &y);
+        x = x - 1; 
+        y = y - 1;
+        if(verificaCoordenadas(x,y, matCoordenadasLidas, ordem) && (x >= 0 && y >= 0)){
+            matCampo[x][y] = campo[x][y];
+            imprimeMatriz(ordem, matCampo);
         }else{
             printf("ja inseriu essas\n");
         }
         cont++;
-    }
+        if(cont == (ordem*ordem - bomba)){
+            printf("Voce eh fera\n");
+        }
+
+    }while(((x && y) || cont <= (ordem*ordem - bomba)) && perdeu(campo[x][y],ordem,campo));
     
 
     for(int i = 0; i < ordem; i++){
@@ -124,16 +136,36 @@ void jogo(int dificuldade){
     free(matCampo);
     free(campo);
 }
-
-int verificaCoordenadas(int x, int y, int**matLido){
-    
-    
-    if(matLido[x][0] != 0 || matLido[y][1]!= 0){
-        matLido[x][0] = 1;
-        matLido[y][1] = 1;
-        printf("%d", matLido[x][y]);
-        return 1;
-    }else return 0;
+int perdeu(int valor,int ordem, int **campo){
+    if(valor == -1){
+        printf("Voce Perdeu!\n");
+        imprimeMatriz(ordem, campo);
+        return 0;
+    }else return 1;
+}
+int verificaCoordenadas(int x, int y, int**matLido, int ordem){
+    int lido = 0;
+    for(int i = 0; i < ordem*ordem; i++){
+      
+        if(i > 0){
+            if(matLido[i][0] == -1 && matLido[i-1][0] != x && matLido[i-1][1] != y){
+                matLido[i][0] = x;
+                matLido[i][1] = y;
+            }
+        }else if(matLido[i][0] == -1){
+            matLido[i][0] = x;
+            matLido[i][1] = y;
+        }
+        printf("%d %d \n", matLido[i][0], matLido[i][1]);
+    }
+    for(int i = 0; i < ordem*ordem; i++){
+        
+        if(matLido[i][0] == x && matLido[i][1] == y){
+            lido = 1;
+        }
+        
+    }
+    return lido;
 }
 void insereBomba(int** mat, int bomba, int ordem){
     int coordBomba[2][bomba];
@@ -145,6 +177,7 @@ void insereBomba(int** mat, int bomba, int ordem){
         mat[i][j] = -1;
         coordBomba[0][cont] = i;
         coordBomba[1][cont] = j;
+        printf("%d %d\n", coordBomba[0][cont], coordBomba[1][cont]);
         
     }
     
