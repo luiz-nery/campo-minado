@@ -1,14 +1,16 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
+#include<windows.h> // Para usar o sleep e limpar a tela
 void imprimeMatriz(int ordem, int **mat);
 int** criaMatriz(int linha, int coluna);
 void jogo(int dificuldade);
 int perdeu(int valor,int ordem, int**campo);
 void insereBomba(int**mat, int bomba, int ordem);
 void inicializaMatriz(int** mat, int valor,int linha, int coluna);
-int verificaCoordenadas(int x, int y, int**matLido, int ordem);
+int verificaCoordenadas(int x, int y, int**matLido);
 
+//inicia o jogo
 int main(){
     int dificuldade;
     printf("Escolha a dificuldade:\n");
@@ -41,6 +43,7 @@ void imprimeMatriz(int ordem, int **mat){
     }
    
 }
+//função para criar as matrizes alocadas dinamicamente
 int** criaMatriz(int linha, int coluna){
     int **mat = (int**) malloc(linha*sizeof(int*));//matriz que representa o campo minado
     if(mat == NULL){
@@ -60,6 +63,7 @@ int** criaMatriz(int linha, int coluna){
     
     return mat;
 }
+//inicializa a matriz com um valor indicado, serve pra inicializar com 0 ou 88(simbolo)
 void inicializaMatriz(int** mat, int valor,int linha, int coluna){
     for(int i = 0; i < linha; i++){
         for(int j = 0; j < coluna; j++){
@@ -68,61 +72,66 @@ void inicializaMatriz(int** mat, int valor,int linha, int coluna){
     }
 }
 void jogo(int dificuldade){
-    int **campo, ordem, bomba;
-    int **matCampo;
-    int **matCoordenadasLidas;
+    int **campo, ordem, bomba;//campo é a matriz principal
+    int **matCampo;//matriz impressa pro usuário com x's nas posicoes
+    int **matCoordenadasLidas;//matriz que guarda as coordenadas lidas
     switch(dificuldade){
         case 1:
-            ordem = 3;
-            bomba = 1;
+            ordem = 10;
+            bomba = 3;
             campo = criaMatriz(ordem,ordem);
-            inicializaMatriz(campo,0,ordem,ordem);
-            insereBomba(campo, bomba, ordem);
         break;
         case 2:
             ordem = 20;
             bomba = 6;
             campo = criaMatriz(ordem,ordem);
-            inicializaMatriz(campo,0,ordem,ordem);
-            insereBomba(campo, bomba, ordem);
         break;
         case 3:
             ordem = 30;
             bomba = 9;
             campo = criaMatriz(ordem,ordem);
-            inicializaMatriz(campo,0,ordem,ordem);
-            insereBomba(campo, bomba, ordem);
         break;
         default:
             printf("dificuldade inválida\n");
             int main();
         break;
     }
+    inicializaMatriz(campo,0,ordem,ordem);
+    insereBomba(campo, bomba, ordem);
     matCampo = criaMatriz(ordem, ordem);
-    matCoordenadasLidas = criaMatriz(ordem*ordem,2);
-    inicializaMatriz(matCoordenadasLidas, -1 , ordem, 2);
+    matCoordenadasLidas = criaMatriz(ordem, ordem);
+    inicializaMatriz(matCoordenadasLidas, 0 , ordem, ordem);
     inicializaMatriz(matCampo,88,ordem,ordem);
 
     imprimeMatriz(ordem, matCampo);
     int x, y, cont = 0;
     do{
+        printf("Digite as coordenadas x,y:\n");
         scanf("%d,%d", &x, &y);
+        printf("\n");
         x = x - 1; 
         y = y - 1;
-        if(verificaCoordenadas(x,y, matCoordenadasLidas, ordem) && (x >= 0 && y >= 0)){
+        Sleep(500);
+        system("cls");
+        if(!verificaCoordenadas(x,y, matCoordenadasLidas) && (x >= 0 && y >= 0)){
             matCampo[x][y] = campo[x][y];
             imprimeMatriz(ordem, matCampo);
+            cont++;
         }else{
+            imprimeMatriz(ordem, matCampo);
             printf("ja inseriu essas\n");
         }
-        cont++;
+        
         if(cont == (ordem*ordem - bomba)){
             printf("Voce eh fera\n");
+            imprimeMatriz(ordem, campo);
         }
+        printf("\n");
+        printf("Movimentos: %d\n", cont);
 
-    }while(((x && y) || cont <= (ordem*ordem - bomba)) && perdeu(campo[x][y],ordem,campo));
+    }while((cont < (ordem*ordem - bomba)) && perdeu(campo[x][y],ordem,campo));
     
-
+    //liberando a memória
     for(int i = 0; i < ordem; i++){
         free(campo[i]);
     }
@@ -136,37 +145,34 @@ void jogo(int dificuldade){
     free(matCampo);
     free(campo);
 }
+
+//verifica a cada rodada se o usuário encontrou uma bomba
 int perdeu(int valor,int ordem, int **campo){
+    //valor guarda o valor da posição indicada pelo usuário
     if(valor == -1){
         printf("Voce Perdeu!\n");
         imprimeMatriz(ordem, campo);
         return 0;
     }else return 1;
 }
-int verificaCoordenadas(int x, int y, int**matLido, int ordem){
-    int lido = 0;
-    for(int i = 0; i < ordem*ordem; i++){
-      
-        if(i > 0){
-            if(matLido[i][0] == -1 && matLido[i-1][0] != x && matLido[i-1][1] != y){
-                matLido[i][0] = x;
-                matLido[i][1] = y;
-            }
-        }else if(matLido[i][0] == -1){
-            matLido[i][0] = x;
-            matLido[i][1] = y;
-        }
-        printf("%d %d \n", matLido[i][0], matLido[i][1]);
-    }
-    for(int i = 0; i < ordem*ordem; i++){
-        
-        if(matLido[i][0] == x && matLido[i][1] == y){
-            lido = 1;
-        }
-        
+
+/*verifica se as coordenada já foram usadas
+    coloca o valor 1 na posicao x,y de uma matriz que representa a tentativa do usuário
+    ex:
+    0 0 0                   0 1 0
+    0 0 0  x = 1, y = 2 ->  0 0 0
+    0 0 0                   0 0 0
+*/
+int verificaCoordenadas(int x, int y, int**matLido){
+    int lido = 1;
+    if(matLido[x][y] == 0){
+        matLido[x][y] = 1;
+        lido = 0;
     }
     return lido;
 }
+
+//escolhe randomicamente as coordenadas das bombas e insere na matriz campo 
 void insereBomba(int** mat, int bomba, int ordem){
     int coordBomba[2][bomba];
     srand(time(NULL));
@@ -177,8 +183,6 @@ void insereBomba(int** mat, int bomba, int ordem){
         mat[i][j] = -1;
         coordBomba[0][cont] = i;
         coordBomba[1][cont] = j;
-        printf("%d %d\n", coordBomba[0][cont], coordBomba[1][cont]);
-        
     }
     
     for(int i = 0; i < ordem; i++){
