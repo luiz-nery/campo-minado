@@ -1,7 +1,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
-#include<windows.h> // Para usar o sleep e limpar a tela
+//#include<windows.h> // Para usar o sleep e limpar a tela
+#include <unistd.h> // Para usar o sleep e limpar a tela em linux
 void imprimeMatriz(int ordem, int **mat);
 int** criaMatriz(int linha, int coluna);
 void jogo();
@@ -16,7 +17,7 @@ int main(){
     jogo();
     return 0;
 }
-
+      
 void jogo(){
     int dificuldade;
     int **campo, ordem, bomba;//campo é a matriz principal
@@ -47,7 +48,8 @@ void jogo(){
             campo = criaMatriz(ordem,ordem);
         break;
         case 0:
-
+            printf("Obrigado por jogar\n");
+            exit(1);
         break;
         default:
             printf("dificuldade inválida\n");
@@ -69,8 +71,8 @@ void jogo(){
         printf("\n");
         x = x - 1; 
         y = y - 1;
-        Sleep(500);
-        system("cls");
+        usleep(500);
+        system("clear");
         printf("Movimentos: %d\n", cont);
         if(!verificaCoordenadas(x,y,ordem, matCoordenadasLidas)){
             matCampo[x][y] = campo[x][y];
@@ -92,7 +94,7 @@ void jogo(){
         }
 
     }while((cont < (ordem*ordem - bomba)) && perdeu(x,y,ordem,campo));
-    
+    jogo();
     //liberando a memória
     for(int i = 0; i < ordem; i++){
         free(campo[i]);
@@ -188,8 +190,9 @@ int perdeu(int x, int y,int ordem, int **campo){
         } 
     }else if(x == -1 || y == -1){
         fim = 0;
-        system("pause");
-        system("cls");
+        //system("pause");
+        usleep(500);
+        system("clear");
     }else{
         fim = 1;
     }
