@@ -1,8 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
-//#include<windows.h> // Para usar o sleep e limpar a tela
-#include <unistd.h> // Para usar o sleep e limpar a tela em linux
+
 void imprimeMatriz(int ordem, int **mat);
 int** criaMatriz(int linha, int coluna);
 void jogo();
@@ -71,13 +70,14 @@ void jogo(){
         printf("\n");
         x = x - 1; 
         y = y - 1;
-        usleep(500);
-        system("clear");
+
         printf("Movimentos: %d\n", cont);
         if(!verificaCoordenadas(x,y,ordem, matCoordenadasLidas)){
             matCampo[x][y] = campo[x][y];
             imprimeMatriz(ordem, matCampo);
             cont++;
+            x++;
+            y++;
         }else if((x >= ordem || y >= ordem || x < 0 || y < 0) && (x != -1 && y != -1)){
             imprimeMatriz(ordem, matCampo);
             printf("coordenadas invalidas\n");
@@ -90,7 +90,6 @@ void jogo(){
             printf("Voce eh fera\n");
             imprimeMatriz(ordem, campo);
             printf("Que tal mais uma?\n");
-            jogo();
         }
 
     }while((cont < (ordem*ordem - bomba)) && perdeu(x,y,ordem,campo));
@@ -176,10 +175,6 @@ int perdeu(int x, int y,int ordem, int **campo){
         if(campo[x][y] == -1){
             printf("Voce Perdeu!\n");
             imprimeMatriz(ordem, campo);
-            int denovo;
-            printf("Deseja jogar de novo?\n(1)sim\n(0)nao\n");
-            scanf("%d", &denovo);
-            if(denovo) jogo();
             fim = 0;
         }else{
             printf("Ufa! sem bombas por aqui\n");
@@ -190,9 +185,7 @@ int perdeu(int x, int y,int ordem, int **campo){
         } 
     }else if(x == -1 || y == -1){
         fim = 0;
-        //system("pause");
-        usleep(500);
-        system("clear");
+        
     }else{
         fim = 1;
     }
