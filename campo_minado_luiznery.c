@@ -2,26 +2,27 @@
 #include<stdlib.h>
 #include<time.h>
 
-void imprimeMatriz(int ordem, int **mat);
-int** criaMatriz(int linha, int coluna);
 void jogo();
-int perdeu(int x, int y,int ordem, int **campo);
-void insereBomba(int**mat, int bomba, int ordem);
+int** criaMatriz(int linha, int coluna);
 void inicializaMatriz(int** mat, int valor,int linha, int coluna);
-int verificaCoordenadas(int x, int y,int ordem, int**matLido);
-
+void insereBomba(int**mat, int bomba, int ordem);
+void vizinhaDasBombas(int bomba, int coordBomba[][bomba], int ordem, int **mat);//soma +1 nas casas vizinhas das bombas
+void imprimeMatriz(int ordem, int **mat);
+int verificaCoordenadas(int x, int y,int ordem, int**matLido);//Verifica se as coordenadas já foram usadas
+int perdeu(int x, int y,int ordem, int **campo);//verifica se o jogador perdeu
+int ganhou(int movimentos, int ordem, int bombas);//verifica se o jogador ganhou
+int sair(int x);
 //inicia o jogo
 int main(){
-    
     jogo();
     return 0;
 }
-      
 void jogo(){
-    int dificuldade;
+    int valorPreencheMatriz, dificuldade;
     int **campo, ordem, bomba;//campo é a matriz principal
     int **matCampo;//matriz impressa pro usuário com x's nas posicoes
     int **matCoordenadasLidas;//matriz que guarda as coordenadas lidas
+    int x, y, movimentos = 0;
 
     printf("Escolha a dificuldade:\n");
     printf("(1)Facil\n");
@@ -51,48 +52,42 @@ void jogo(){
             exit(1);
         break;
         default:
-            printf("dificuldade inválida\n");
-            int main();
+            printf("dificuldade invalida\n\n");
+            jogo();
         break;
     }
-    inicializaMatriz(campo,0,ordem,ordem);
-    insereBomba(campo, bomba, ordem);
     matCampo = criaMatriz(ordem, ordem);
     matCoordenadasLidas = criaMatriz(ordem, ordem);
-    inicializaMatriz(matCoordenadasLidas, 0 , ordem, ordem);
-    inicializaMatriz(matCampo,88,ordem,ordem);
-
+    valorPreencheMatriz = 0;
+    inicializaMatriz(campo,valorPreencheMatriz,ordem,ordem);
+    inicializaMatriz(matCoordenadasLidas, valorPreencheMatriz , ordem, ordem);
+    valorPreencheMatriz = 88;
+    inicializaMatriz(matCampo,valorPreencheMatriz,ordem,ordem);
+    insereBomba(campo, bomba, ordem);
     imprimeMatriz(ordem, matCampo);
-    int x, y, cont = 0;
-    do{
+    
+    do{ 
         printf("Digite as coordenadas x,y (ou 0 para sair)\n");
         scanf("%d,%d", &x, &y);
         printf("\n");
-        x = x - 1; 
-        y = y - 1;
-
-        printf("Movimentos: %d\n", cont);
+        x--;
+        y--;
+       
         if(!verificaCoordenadas(x,y,ordem, matCoordenadasLidas)){
             matCampo[x][y] = campo[x][y];
             imprimeMatriz(ordem, matCampo);
-            cont++;
-            x++;
-            y++;
-        }else if((x >= ordem || y >= ordem || x < 0 || y < 0) && (x != -1 && y != -1)){
+            movimentos++;
+            printf("Movimentos: %d\n", movimentos);
+            
+        }else if((x >= ordem || y >= ordem || x <= 0 || y <= 0) && (x != -1)){
             imprimeMatriz(ordem, matCampo);
             printf("coordenadas invalidas\n");
-        }else if(x != -1 && y != - 1){
+        }else if(x != -1 && y != -1){
             imprimeMatriz(ordem, matCampo);
             printf("ja inseriu essas\n");
         }
-        
-        if(cont == (ordem*ordem - bomba)){
-            printf("Voce eh fera\n");
-            imprimeMatriz(ordem, campo);
-            printf("Que tal mais uma?\n");
-        }
 
-    }while((cont < (ordem*ordem - bomba)) && perdeu(x,y,ordem,campo));
+    }while(ganhou(movimentos, ordem*ordem, bomba) && perdeu(x,y,ordem,campo) && !sair(x));
     jogo();
     //liberando a memória
     for(int i = 0; i < ordem; i++){
@@ -101,42 +96,13 @@ void jogo(){
     for(int i = 0; i < ordem; i++){
         free(matCampo[i]);
     }
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < ordem; i++){
         free(matCoordenadasLidas[i]);
     }
     free(matCoordenadasLidas);
     free(matCampo);
     free(campo);
     
-}
-
-void imprimeMatriz(int ordem, int **mat){
-    printf("     ");
-    for(int x = 1; x <= ordem; x++){
-        if(x <= 10) printf(" %d ", x);
-        else printf("%d ", x);
-        
-    }
-    printf("\n");
-    printf("     ");
-    for(int i = 0; i < ordem; i++){
-        printf("---");
-    }
-    printf("\n");
-
-      for(int i = 0; i < ordem; i++){
-
-        if(i+1 < 10) printf("%d |  ", i+1);
-        else printf("%d|  ", i+1);
-
-        for(int j = 0; j < ordem; j++){
-            if(mat[i][j] == 88) printf(" %c ", mat[i][j]);
-            else if(mat[i][j] < 0  ) printf("%d ", mat[i][j]);
-            else printf(" %d ", mat[i][j]);
-        }
-        printf("\n");
-    }
-   
 }
 //função para criar as matrizes alocadas dinamicamente
 int** criaMatriz(int linha, int coluna){
@@ -166,30 +132,67 @@ void inicializaMatriz(int** mat, int valor,int linha, int coluna){
         }
     }
 }
-
-
-//verifica a cada rodada se o usuário encontrou uma bomba
-int perdeu(int x, int y,int ordem, int **campo){
-    int fim;
-    if(x >= 0 && x < ordem && y >= 0 && y < ordem){
-        if(campo[x][y] == -1){
-            printf("Voce Perdeu!\n");
-            imprimeMatriz(ordem, campo);
-            fim = 0;
-        }else{
-            printf("Ufa! sem bombas por aqui\n");
-            if(campo[x][y]>0){
-                printf("Mas, cuidado! ha bombas por perto\n");
-            }
-            fim = 1;
-        } 
-    }else if(x == -1 || y == -1){
-        fim = 0;
+//escolhe randomicamente as coordenadas das bombas e insere na matriz campo 
+void insereBomba(int** mat, int bomba, int ordem){
+    int coordBomba[2][bomba];//guarda as coordenadas das bombas, sendo x a coluna 0, y a coluna 1
+    int x = 0, y = 1;
+    srand(time(NULL));
+    for(int cont = 0; cont < bomba; cont++){
         
-    }else{
-        fim = 1;
+        int i = rand()%ordem;
+        int j = rand()%ordem;
+        mat[i][j] = -1;
+        coordBomba[x][cont] = i;
+        coordBomba[y][cont] = j;
     }
-    return fim;
+    vizinhaDasBombas(bomba, coordBomba, ordem, mat);
+    
+}
+void vizinhaDasBombas(int bomba, int coordBomba[][bomba], int ordem, int **mat){
+    int x = 0, y = 1;
+    for(int i = 0; i < ordem; i++){
+        for(int j = 0; j < ordem; j++){
+            for(int k = 0; k < bomba; k++){
+                if(((i == coordBomba[x][k] && (j == coordBomba[y][k] - 1 || j == coordBomba[y][k] + 1))
+                 || (i == coordBomba[x][k] - 1 && (j == coordBomba[y][k] || j == coordBomba[y][k] + 1 || j == coordBomba[1][k]+1))
+                 || (i == coordBomba[x][k] + 1 && (j == coordBomba[y][k] || j == coordBomba[y][k] + 1 || j == coordBomba[1][k]+1)))
+                 && mat[i][j] >= 0){
+                    mat[i][j]++;
+                }else if(j == coordBomba[1][k] - 1 && (i == coordBomba[0][k] + 1 || i == coordBomba[0][k] - 1) && mat[i][j]>=0){
+                    mat[i][j]++;
+                }
+            }
+            
+        }
+    }
+}
+void imprimeMatriz(int ordem, int **mat){
+    printf("     ");
+    for(int x = 1; x <= ordem; x++){
+        if(x <= 10) printf(" %d ", x);
+        else printf("%d ", x);
+        
+    }
+    printf("\n");
+    printf("     ");
+    for(int i = 0; i < ordem; i++){
+        printf("---");
+    }
+    printf("\n");
+
+      for(int i = 0; i < ordem; i++){
+
+        if(i+1 < 10) printf("%d |  ", i+1);
+        else printf("%d|  ", i+1);
+
+        for(int j = 0; j < ordem; j++){
+            if(mat[i][j] == 88) printf(" X ");
+            else if(mat[i][j] < 0  ) printf("%d ", mat[i][j]);
+            else printf(" %d ", mat[i][j]);
+        }
+        printf("\n");
+    }
+   
 }
 
 /*verifica se as coordenada já foram usadas
@@ -200,43 +203,46 @@ int perdeu(int x, int y,int ordem, int **campo){
     0 0 0                   0 0 0
 */
 int verificaCoordenadas(int x, int y,int ordem, int**matLido){
-    int lido = 1;
-    if (x >= 0 && y >= 0 && x < ordem && y < ordem){
+    int valido = 1;
+    if (x >= 0 && y >= 0 && x < ordem && y < ordem && x!= -1 && y!=-1){
         if(matLido[x][y] == 0){
             matLido[x][y] = 1;
-            lido = 0;
+            valido = 0;
         }
     }
     
-    return lido;
+    return valido;
 }
-
-//escolhe randomicamente as coordenadas das bombas e insere na matriz campo 
-void insereBomba(int** mat, int bomba, int ordem){
-    int coordBomba[2][bomba];
-    srand(time(NULL));
-    for(int cont = 0; cont < bomba; cont++){
-        
-        int i = rand()%ordem;
-        int j = rand()%ordem;
-        mat[i][j] = -1;
-        coordBomba[0][cont] = i;
-        coordBomba[1][cont] = j;
-    }
-    
-    for(int i = 0; i < ordem; i++){
-        for(int j = 0; j < ordem; j++){
-            for(int k = 0; k < bomba; k++){
-                if(((i == coordBomba[0][k] && (j == coordBomba[1][k] - 1 || j == coordBomba[1][k] + 1))
-                 || (i == coordBomba[0][k] - 1 && (j == coordBomba[1][k] || j == coordBomba[1][k] + 1 || j == coordBomba[1][k]+1))
-                 || (i == coordBomba[0][k] + 1 && (j == coordBomba[1][k] || j == coordBomba[1][k] + 1 || j == coordBomba[1][k]+1)))
-                 && mat[i][j] >= 0){
-                    mat[i][j]++;
-                }else if(j == coordBomba[1][k] - 1 && (i == coordBomba[0][k] + 1 || i == coordBomba[0][k] - 1) && mat[i][j]>=0){
-                    mat[i][j]++;
-                }
+int sair(int x){
+    if(x == -1){
+        return 1;
+    }else return 0;
+}
+//verifica a cada rodada se o usuário encontrou uma bomba
+int perdeu(int x, int y,int ordem, int **campo){
+    int fim;
+    if(x >= 0 && x < ordem && y >= 0 && y < ordem){
+        if(campo[x][y] == -1){
+            printf("\nVoce Perdeu!\n");
+            imprimeMatriz(ordem, campo);
+            fim = 0;
+        }else{
+            printf("Ufa! sem bombas por aqui\n");
+            if(campo[x][y]>0){
+                printf("Mas, cuidado! ha bombas por perto\n");
             }
-            
-        }
+            fim = 1;
+        } 
+    }else{
+        fim = 1;
     }
+    return fim;
+}
+int ganhou(int movimentos, int ordem, int bombas){
+    if(movimentos == (ordem*ordem - bombas)){
+        printf("Voce eh fera\n");
+        printf("Que tal mais uma?\n");
+        return 0;
+    }
+    return 1;
 }
