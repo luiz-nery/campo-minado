@@ -214,9 +214,11 @@ int verificaCoordenadas(int x, int y,int ordem, int**matLido){
     return valido;
 }
 int sair(int x){
+    int saiu = 0;
     if(x == -1){
-        return 1;
-    }else return 0;
+        saiu = 1;
+    }
+    return saiu;
 }
 //verifica a cada rodada se o usuário encontrou uma bomba
 int perdeu(int x, int y,int ordem, int **campo){
@@ -239,10 +241,11 @@ int perdeu(int x, int y,int ordem, int **campo){
     return fim;
 }
 int ganhou(int movimentos, int ordem, int bombas){
+    int ganha = 1;
     if(movimentos == (ordem*ordem - bombas)){
         printf("Voce eh fera\n");
         printf("Que tal mais uma?\n");
-        return 0;
+        ganha = 0;
     }
-    return 1;
+    return ganha;
 }
