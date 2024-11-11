@@ -2,16 +2,25 @@
 #include<stdlib.h>
 #include<time.h>
 
+#define valorescondido 88
+
 void jogo();
 int** criaMatriz(int linha, int coluna);
+//inicializa a matriz com um valor, a saber 0 e 88(pra diferenciar a impressão de 'X' ou numero)
 void inicializaMatriz(int** mat, int valor,int linha, int coluna);
+//escolhe ramdomicamente os i's e j's das bombas depois insere na matriz
 void insereBomba(int**mat, int bomba, int ordem);
-void vizinhaDasBombas(int bomba, int coordBomba[][bomba], int ordem, int **mat);//soma +1 nas casas vizinhas das bombas
+//soma +1 nas casas vizinhas das bombas{(i,j+1), (i,j-1),(i+1,j),(i-1,j),(i+1,j+1),(i+1,j-1),(i-1,j+1),(i-1,j-1)}
+void vizinhaDasBombas(int bomba, int coordBomba[][bomba], int ordem, int **mat);
 void imprimeMatriz(int ordem, int **mat);
-int verificaCoordenadas(int x, int y,int ordem, int**matLido);//Verifica se as coordenadas já foram usadas
-int perdeu(int x, int y,int ordem, int **campo);//verifica se o jogador perdeu
-int ganhou(int movimentos, int ordem, int bombas);//verifica se o jogador ganhou
-int sair(int x);
+//Verifica se as coordenadas já foram usadas ou se são válidas
+int verificaCoordenadas(int x, int y,int ordem, int**matLido);
+//verifica se o jogador abriu uma mina
+int perdeu(int x, int y,int ordem, int **campo);
+//verifica se o jogador abriu todas as casas sem minas
+int ganhou(int movimentos, int ordem, int bombas);
+int sair(int x);//função que sai do jogo
+void libera_campo(int **matEscondida, int **matCampo, int x, int y, int ordem);
 //inicia o jogo
 int main(){
     jogo();
@@ -20,7 +29,7 @@ int main(){
 void jogo(){
     int valorPreencheMatriz, dificuldade;
     int **campo, ordem, bomba;//campo é a matriz principal
-    int **matCampo;//matriz impressa pro usuário com x's nas posicoes
+    int **matEscondida;//matriz impressa pro usuário com x's nas posicoes
     int **matCoordenadasLidas;//matriz que guarda as coordenadas lidas
     int x, y, movimentos = 0;
 
@@ -56,15 +65,14 @@ void jogo(){
             jogo();
         break;
     }
-    matCampo = criaMatriz(ordem, ordem);
+    matEscondida = criaMatriz(ordem, ordem);
     matCoordenadasLidas = criaMatriz(ordem, ordem);
     valorPreencheMatriz = 0;
     inicializaMatriz(campo,valorPreencheMatriz,ordem,ordem);
     inicializaMatriz(matCoordenadasLidas, valorPreencheMatriz , ordem, ordem);
-    valorPreencheMatriz = 88;
-    inicializaMatriz(matCampo,valorPreencheMatriz,ordem,ordem);
+    inicializaMatriz(matEscondida,valorescondido,ordem,ordem);
     insereBomba(campo, bomba, ordem);
-    imprimeMatriz(ordem, matCampo);
+    imprimeMatriz(ordem, matEscondida);
     
     do{ 
         printf("Digite as coordenadas x,y (ou 0 para sair)\n");
@@ -74,16 +82,17 @@ void jogo(){
         y--;
        
         if(!verificaCoordenadas(x,y,ordem, matCoordenadasLidas)){
-            matCampo[x][y] = campo[x][y];
-            imprimeMatriz(ordem, matCampo);
+            libera_campo(matEscondida, campo, x, y, ordem);
+            matEscondida[x][y] = campo[x][y];
+            imprimeMatriz(ordem, matEscondida);
             movimentos++;
             printf("Movimentos: %d\n", movimentos);
             
         }else if((x >= ordem || y >= ordem || x <= 0 || y <= 0) && (x != -1)){
-            imprimeMatriz(ordem, matCampo);
+            imprimeMatriz(ordem, matEscondida);
             printf("coordenadas invalidas\n");
         }else if(x != -1 && y != -1){
-            imprimeMatriz(ordem, matCampo);
+            imprimeMatriz(ordem, matEscondida);
             printf("ja inseriu essas\n");
         }
 
@@ -94,17 +103,34 @@ void jogo(){
         free(campo[i]);
     }
     for(int i = 0; i < ordem; i++){
-        free(matCampo[i]);
+        free(matEscondida[i]);
     }
     for(int i = 0; i < ordem; i++){
         free(matCoordenadasLidas[i]);
     }
     free(matCoordenadasLidas);
-    free(matCampo);
+    free(matEscondida);
     free(campo);
     
 }
-//função para criar as matrizes alocadas dinamicamente
+void libera_campo(int **matEscondida, int **matCampo, int x, int y, int ordem){
+    if((x >= 0 && x < ordem) && (y >= 0 && y < ordem)){
+        if(matCampo[x][y] == 0 && matEscondida[x][y] == valorescondido){
+            matEscondida[x][y] = matCampo[x][y];
+            libera_campo(matEscondida, matCampo,x,y-1, ordem);
+            libera_campo(matEscondida, matCampo,x,y+1, ordem);
+            libera_campo(matEscondida, matCampo,x-1,y, ordem);
+            libera_campo(matEscondida, matCampo,x+1,y, ordem);
+            libera_campo(matEscondida, matCampo,x-1,y-1, ordem);
+            libera_campo(matEscondida, matCampo,x+1,y-1, ordem);
+            libera_campo(matEscondida, matCampo,x-1,y+1, ordem);
+            libera_campo(matEscondida, matCampo,x+1,y+1, ordem);
+        }else{
+            matEscondida[x][y] = matCampo[x][y];
+        }
+    }
+}
+
 int** criaMatriz(int linha, int coluna){
     int **mat = (int**) malloc(linha*sizeof(int*));//matriz que representa o campo minado
     if(mat == NULL){
@@ -124,7 +150,7 @@ int** criaMatriz(int linha, int coluna){
     
     return mat;
 }
-//inicializa a matriz com um valor indicado, serve pra inicializar com 0 ou 88(simbolo)
+
 void inicializaMatriz(int** mat, int valor,int linha, int coluna){
     for(int i = 0; i < linha; i++){
         for(int j = 0; j < coluna; j++){
@@ -132,7 +158,7 @@ void inicializaMatriz(int** mat, int valor,int linha, int coluna){
         }
     }
 }
-//escolhe randomicamente as coordenadas das bombas e insere na matriz campo 
+
 void insereBomba(int** mat, int bomba, int ordem){
     int coordBomba[2][bomba];//guarda as coordenadas das bombas, sendo x a coluna 0, y a coluna 1
     int x = 0, y = 1;
@@ -225,13 +251,13 @@ int perdeu(int x, int y,int ordem, int **campo){
     int fim;
     if(x >= 0 && x < ordem && y >= 0 && y < ordem){
         if(campo[x][y] == -1){
-            printf("\nVoce Perdeu!\n");
+            printf("\nGame Over!\n");
             imprimeMatriz(ordem, campo);
             fim = 0;
         }else{
             printf("Ufa! sem bombas por aqui\n");
             if(campo[x][y]>0){
-                printf("Mas, cuidado! ha bombas por perto\n");
+                printf("Mas, cuidado! ha %d bombas por perto\n", campo[x][y]);
             }
             fim = 1;
         } 
@@ -243,8 +269,7 @@ int perdeu(int x, int y,int ordem, int **campo){
 int ganhou(int movimentos, int ordem, int bombas){
     int ganha = 1;
     if(movimentos == (ordem*ordem - bombas)){
-        printf("Voce eh fera\n");
-        printf("Que tal mais uma?\n");
+        printf("Parabens, voce eh fera\n");
         ganha = 0;
     }
     return ganha;
