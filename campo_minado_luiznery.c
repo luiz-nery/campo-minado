@@ -43,17 +43,17 @@ void jogo(){
     switch(dificuldade){
         case 1:
             ordem = 10;
-            bomba = 3;
+            bomba = 15;
             campo = criaMatriz(ordem,ordem);
         break;
         case 2:
             ordem = 20;
-            bomba = 6;
+            bomba = 60;
             campo = criaMatriz(ordem,ordem);
         break;
         case 3:
             ordem = 30;
-            bomba = 9;
+            bomba = 135;
             campo = criaMatriz(ordem,ordem);
         break;
         case 0:
@@ -167,9 +167,19 @@ void insereBomba(int** mat, int bomba, int ordem){
         
         int i = rand()%ordem;
         int j = rand()%ordem;
-        mat[i][j] = -1;
-        coordBomba[x][cont] = i;
-        coordBomba[y][cont] = j;
+        if(mat[i][j] != -1){
+            mat[i][j] = -1;
+            coordBomba[x][cont] = i;
+            coordBomba[y][cont] = j;
+        }else cont--;
+        
+        
+    }
+    for(int i = 0; i < 2; i++){
+        for(int j = 0; j < bomba; j++){
+            printf("%d ", coordBomba[i][j]);
+        }
+        printf("\n");
     }
     vizinhaDasBombas(bomba, coordBomba, ordem, mat);
     
@@ -179,12 +189,28 @@ void vizinhaDasBombas(int bomba, int coordBomba[][bomba], int ordem, int **mat){
     for(int i = 0; i < ordem; i++){
         for(int j = 0; j < ordem; j++){
             for(int k = 0; k < bomba; k++){
-                if(((i == coordBomba[x][k] && (j == coordBomba[y][k] - 1 || j == coordBomba[y][k] + 1))
-                 || (i == coordBomba[x][k] - 1 && (j == coordBomba[y][k] || j == coordBomba[y][k] + 1 || j == coordBomba[1][k]+1))
-                 || (i == coordBomba[x][k] + 1 && (j == coordBomba[y][k] || j == coordBomba[y][k] + 1 || j == coordBomba[1][k]+1)))
-                 && mat[i][j] >= 0){
+                if((i == coordBomba[x][k] && j == coordBomba[y][k]+1)&& mat[i][j] != -1){
                     mat[i][j]++;
-                }else if(j == coordBomba[1][k] - 1 && (i == coordBomba[0][k] + 1 || i == coordBomba[0][k] - 1) && mat[i][j]>=0){
+                }
+                if((i == coordBomba[x][k] && j == coordBomba[y][k]-1)&& mat[i][j] != -1){
+                    mat[i][j]++;
+                }
+                if((i == coordBomba[x][k]+1 && j == coordBomba[y][k])&& mat[i][j] != -1){
+                    mat[i][j]++;
+                }
+                if((i == coordBomba[x][k]+1 && j == coordBomba[y][k]-1)&& mat[i][j] != -1){
+                    mat[i][j]++;
+                }
+                if((i == coordBomba[x][k]+1 && j == coordBomba[y][k]+1)&& mat[i][j] != -1){
+                    mat[i][j]++;
+                }
+                if((i == coordBomba[x][k]-1 && j == coordBomba[y][k])&& mat[i][j] != -1){
+                    mat[i][j]++;
+                }
+                if((i == coordBomba[x][k]-1 && j == coordBomba[y][k]-1)&& mat[i][j] != -1){
+                    mat[i][j]++;
+                }
+                if((i == coordBomba[x][k]-1 && j == coordBomba[y][k]+1)&& mat[i][j] != -1){
                     mat[i][j]++;
                 }
             }
